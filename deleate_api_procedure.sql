@@ -19,11 +19,11 @@ BEGIN
     DECLARE moduleCur CURSOR FOR
         SELECT
             module_name,
-            concat(',', api_ids, ',')
+            api_ids
         FROM
             module
         WHERE
-            api_ids LIKE concat(',', api_Ids, ',') LIKE concat('%,', targetApiId, ',%');
+            concat(',', api_Ids, ',') LIKE concat('%,', targetApiId, ',%');
 --            api_ids REGEXP concat(apiId, '|', apiId, ',|,', apiId, '|,', apiId, ',')
 --            AND api_ids NOT REGEXP concat('[1-9]', apiId)
 --            AND api_ids NOT REGEXP concat(apiId, '[0-9]')
@@ -43,7 +43,7 @@ BEGIN
             UPDATE
                 module
             SET
-                api_ids=afterApiIds;
+                api_ids=afterApiIds
             WHERE
                 module_name=moduleName;
             -- 更新後の確認
