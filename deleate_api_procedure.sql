@@ -38,7 +38,7 @@ BEGIN
         BEGIN
             -- 更新前に確認
             SELECT concat('brfore module::', moduleName , 'apiIds::', beforApiIds);
-            afterApiIds = REPLACE(beforApiIds, CONCAT(',', targetApiId, ','), ''); -- @TODO 動く？ ,削除しないといけない
+            SET afterApiIds = REPLACE(CONCAT(‘,’, beforApiIds, ’,’), CONCAT(',', targetApiId, ','), ','); -- @TODO 動く？ ,削除しないといけない
             -- 対象モジュールのAPI利用管理文字列を更新
             UPDATE
                 module
