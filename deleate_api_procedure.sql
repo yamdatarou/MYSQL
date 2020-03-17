@@ -9,53 +9,38 @@ DROP PROCEDURE popApiIdFromModule;
 DELIMITER //
 CREATE PROCEDURE popApiIdFromModule(IN targetApiId INT)
 BEGIN
--- 対象モジュール
+    -- ハンドラで利用する変数 v_done を宣言
+    DECLARE v_done INT DEFAULT 0;
+    -- 対象モジュール
     DECLARE moduleName VARCHAR(10);
--- 対象モジュールに設定されているAPI文字列 修正前
+    -- 対象モジュールに設定されているAPI文字列 修正前
     DECLARE beforApiIds VARCHAR(10);
--- 対象モジュールに設定されているAPI文字列 修正後
+    -- 対象モジュールに設定されているAPI文字列 修正後
     DECLARE afterApiIds VARCHAR(10);
--- 対象モジュールのセレクトカーソル
+    DECLARE tmpAfterApiIds VARCHAR(10);
+    -- 対象モジュールのセレクトカーソル
     DECLARE moduleCur CURSOR FOR
         SELECT
             module_name,
-            concat(',', api_ids, ',')
+            api_ids
         FROM
             module
         WHERE
-            api_ids LIKE concat(',', api_Ids, ',') LIKE concat('%,', targetApiId, ',%');
---            api_ids REGEXP concat(apiId, '|', apiId, ',|,', apiId, '|,', apiId, ',')
---            AND api_ids NOT REGEXP concat('[1-9]', apiId)
---            AND api_ids NOT REGEXP concat(apiId, '[0-9]')
---            AND api_ids NOT REGEXP concat('[1-9]',apiId,'[0-9]');
+            concat(',', api_Ids, ',') LIKE concat('%,', targetApiId, ',%');
+    -- SQLステートが02000の場合にv_doneを1にするハンドラを宣言
+    DECLARE continue handler FOR sqlstate '02000' SET v_done = 1;
 
--- 対象APIの指定を削除 --
--- カーソル開けごま！
     OPEN moduleCur;
-    FETCH NEXT FROM moduleCur
-    INTO moduleName, beforApiIds;
-    WHILE @@FETCH_STATUS = 0 -- @TODO MySQLで使えない？
+    FETCH NEXT FROM moduleCur INTO moduleName, beforApiIds;
+    WHILE v_done != 1 DO
         BEGIN
-            -- 更新前に確認
-            SELECT concat('brfore module::', moduleName , 'apiIds::', beforApiIds);
-            afterApiIds = REPLACE(beforApiIds, CONCAT(',', targetApiId, ','), ''); -- @TODO 動く？ ,削除しないといけない
-            -- 対象モジュールのAPI利用管理文字列を更新
-            UPDATE
-                module
-            SET
-                api_ids=afterApiIds;
-            WHERE
-                module_name=moduleName;
-            -- 更新後の確認
-            SELECT concat(`after module::` moduleName + ` apiIds::` + apiIds);
-            -- 次の行の情報に更新
-            FETCH NEXT FROM moduleCur
-        	INTO moduleName, apiIds;
-        END
--- カーソルありがとう！
+            SELECT moduleName;
+            SET tmpAfterApiIds = REPLACE(CONCAT(',', beforApiIds, ','), CONCAT(',', targetApiId, ','), ',');
+            SET afterApiIds = TRIM(',' FROM tmpAfterApiIds);
+            FETCH NEXT FROM moduleCur INTO moduleName, beforApiIds;
+        END;
+    END WHILE;
     CLOSE moduleCur;
-    DEALLOCATE moduleCur;
-----
 END
 //
 DELIMITER ;
